@@ -76,23 +76,12 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Set up environment variables:
+4. Run the application:
 ```bash
-export FLASK_APP=run.py
-export FLASK_ENV=development
+python run.py
 ```
 
-5. Initialize the database:
-```bash
-flask db init
-flask db migrate
-flask db upgrade
-```
-
-6. Run the application:
-```bash
-flask run
-```
+The application will automatically create a SQLite database file (`quizwizz.db`) in the project directory when first run.
 
 ## Dependencies
 
