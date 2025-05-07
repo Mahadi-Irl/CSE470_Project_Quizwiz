@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz History{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h1 class="card-title mb-4">Quiz History</h1>
+            
+            {% if attempts %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Quiz Title</th>
+                            <th>Started</th>
+                            <th>Completed</th>
+                            <th>Score</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attempt in attempts %}
+                        <tr>
+                            <td>{{ attempt.quiz.title }}</td>
+                            <td>{{ attempt.started_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                {% if attempt.completed_at %}
+                                {{ attempt.completed_at.strftime('%Y-%m-%d %H:%M') }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if attempt.completed_at and attempt.quiz.grades_released %}
+                                {{ "%.1f"|format(attempt.score) }}%
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if attempt.completed_at %}
+                                    {% if attempt.quiz.grades_released %}
+                                    <span class="badge bg-success">Graded</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% endif %}
+                                {% else %}
+                                <span class="badge bg-info">In Progress</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('quiz.view_quiz', quiz_id=attempt.quiz.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View Quiz
+                                    </a>
+                                    
+                                    {% if not attempt.completed_at %}
+                                    <a href="{{ url_for('quiz.take_quiz', quiz_id=attempt.quiz.id) }}" 
+                                       class="btn btn-sm btn-warning">
+                                        <i class="bi bi-play"></i> Continue Quiz
+                                    </a>
+                                    {% else %}
+                                    <a href="{{ url_for('quiz.take_quiz', quiz_id=attempt.quiz.id) }}" 
+                                       class="btn btn-sm btn-primary">
+                                        <i class="bi bi-arrow-repeat"></i> Retake Quiz
+                                    </a>
+                                    {% endif %}
+                                    
+                                    {% if attempt.completed_at and attempt.quiz.grades_released %}
+                                    <a href="{{ url_for('quiz.view_results', attempt_id=attempt.id) }}" 
+                                       class="btn btn-sm btn-info">
+                                        <i class="bi bi-graph-up"></i> View Results
+                                    </a>
+                                    {% endif %}
+                                    
+                                    <button type="button" 
+                                            class="btn btn-sm {% if attempt.quiz in current_user.bookmarked_quizzes %}btn-danger{% else %}btn-outline-danger{% endif %}"
+                                            onclick="toggleBookmark({{ attempt.quiz.id }}, this)">
+                                        <i class="bi bi-bookmark{% if attempt.quiz in current_user.bookmarked_quizzes %}-fill{% endif %}"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center text-muted">
+                <p>No quiz attempts yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+function toggleBookmark(quizId, button) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    console.log('CSRF Token:', csrfToken); // Debug log
+    
+    const url = "{{ url_for('quiz.toggle_bookmark', quiz_id=0) }}".replace('0', quizId);
+    console.log('Request URL:', url); // Debug log
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        console.log('Response status:', response.status); // Debug log
+        console.log('Response headers:', response.headers); // Debug log
+        if (!response.ok) {
+            return response.text().then(text => {
+                console.error('Error response:', text); // Debug log
+                throw new Error(`Network response was not ok: ${text}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data); // Debug log
+        if (data.status === 'added') {
+            button.classList.remove('btn-outline-danger');
+            button.classList.add('btn-danger');
+            button.querySelector('i').classList.remove('bi-bookmark');
+            button.querySelector('i').classList.add('bi-bookmark-fill');
+        } else {
+            button.classList.remove('btn-danger');
+            button.classList.add('btn-outline-danger');
+            button.querySelector('i').classList.remove('bi-bookmark-fill');
+            button.querySelector('i').classList.add('bi-bookmark');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        console.error('Error details:', error.message);
+        alert('Failed to update bookmark. Please try again.');
+    });
+}
+</script>
+{% endblock %}
+{% endblock %} 

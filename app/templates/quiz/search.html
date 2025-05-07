@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Search Quizzes{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="mb-4">Search Quizzes</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">Search Filters</h2>
+                    <form method="POST" action="{{ url_for('quiz.search_quizzes') }}">
+                        {{ form.csrf_token }}
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.search.label(class="form-label") }}
+                            {{ form.search(class="form-control" + (" is-invalid" if form.search.errors else "")) }}
+                            {% for error in form.search.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.category.label(class="form-label") }}
+                            {{ form.category(class="form-select" + (" is-invalid" if form.category.errors else "")) }}
+                            {% for error in form.category.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">Available Quizzes</h2>
+                    {% if quizzes %}
+                        <div class="row">
+                            {% for quiz in quizzes %}
+                                <div class="col-md-6 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ quiz.title }}</h5>
+                                            <h6 class="card-subtitle mb-2 text-muted">{{ quiz.category }}</h6>
+                                            <p class="card-text">{{ quiz.description|truncate(100) }}</p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">
+                                                    By {{ quiz.author.username }}
+                                                </small>
+                                                <div class="btn-group">
+                                                    <a href="{{ url_for('quiz.view_quiz', quiz_id=quiz.id) }}" class="btn btn-sm btn-primary">
+                                                        View Quiz
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary bookmark-btn" 
+                                                            data-quiz-id="{{ quiz.id }}"
+                                                            onclick="toggleBookmark(this)">
+                                                        <i class="bi bi-bookmark"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-muted">No quizzes found matching your criteria.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleBookmark(button) {
+    const quizId = button.dataset.quizId;
+    fetch(`/quiz/${quizId}/bookmark`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ form.csrf_token.current_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'added') {
+            button.classList.add('active');
+        } else {
+            button.classList.remove('active');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
+{% endblock %} 

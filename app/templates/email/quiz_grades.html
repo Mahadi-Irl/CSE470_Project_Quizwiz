@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .score {
+            text-align: center;
+            font-size: 24px;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Quiz Grades Released</h1>
+    </div>
+
+    <p>Dear {{ user.username }},</p>
+
+    <p>The grades for your quiz attempt on <strong>{{ quiz.title }}</strong> have been released.</p>
+
+    <div class="score {{ grade_category }}">
+        Your Score: {{ attempt.score }}/{{ attempt.max_score }} ({{ "%.1f"|format(percentage) }}%)
+    </div>
+
+    <p>You can view your detailed results and provide feedback by clicking the button below:</p>
+
+    <div style="text-align: center;">
+        <a href="{{ url_for('quiz.view_results', attempt_id=attempt.id, _external=True) }}" class="button">
+            View Results
+        </a>
+    </div>
+
+    <div class="footer">
+        <p>This is an automated message from Quizwizz. Please do not reply to this email.</p>
+    </div>
+</body>
+</html> 

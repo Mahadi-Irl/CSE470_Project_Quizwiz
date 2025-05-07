@@ -1,0 +1,29 @@
+<p>Dear {{ user.username }},</p>
+
+<p>You have been invited to take the quiz "{{ quiz.title }}".</p>
+
+{% if password %}
+<div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+    <h3 style="margin-top: 0;">Quiz Access</h3>
+    <p style="font-size: 1.2em;">
+        Password: <strong>{{ password }}</strong>
+    </p>
+</div>
+{% endif %}
+
+<p>You can take the quiz by clicking the button below:</p>
+
+<div style="text-align: center; margin: 30px 0;">
+    <a href="{{ url_for('quiz.take_quiz', quiz_id=quiz.id, _external=True) }}"
+       style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+        Take Quiz
+    </a>
+</div>
+
+{% if quiz.end_time %}
+<p>The quiz will be available until {{ quiz.end_time.strftime('%Y-%m-%d %H:%M') }}.</p>
+{% endif %}
+
+<p>Good luck!</p>
+
+<p>Sincerely,<br>The Quizwizz Team</p> 

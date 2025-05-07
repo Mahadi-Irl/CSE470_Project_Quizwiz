@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Student Dashboard</h1>
+    
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs mb-4" id="dashboardTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="shared-tab" data-bs-toggle="tab" data-bs-target="#shared" type="button" role="tab">
+                Shared Quizzes
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">
+                History
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="bookmarks-tab" data-bs-toggle="tab" data-bs-target="#bookmarks" type="button" role="tab">
+                Bookmarks
+            </button>
+        </li>
+    </ul>
+    
+    <!-- Tab Content -->
+    <div class="tab-content" id="dashboardTabsContent">
+        <!-- Shared Quizzes Tab -->
+        <div class="tab-pane fade show active" id="shared" role="tabpanel">
+            {% if shared_quizzes %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Category</th>
+                                    <th>Time Limit</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for quiz in shared_quizzes %}
+                                <tr>
+                                    <td>{{ quiz.title }}</td>
+                                    <td>{{ quiz.category }}</td>
+                                    <td>
+                                        {% if quiz.time_limit %}
+                                        {{ quiz.time_limit }} minutes
+                                        {% else %}
+                                        No time limit
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% set attempt = quiz.attempts.filter_by(student_id=current_user.id).first() %}
+                                        {% if attempt and attempt.completed_at %}
+                                            {% if quiz.grades_released %}
+                                            <span class="badge bg-success">Graded</span>
+                                            {% else %}
+                                            <span class="badge bg-warning">Pending</span>
+                                            {% endif %}
+                                        {% else %}
+                                            {% if attempt %}
+                                            <span class="badge bg-info">In Progress</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">Not Started</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('quiz.view_quiz', quiz_id=quiz.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> View Quiz
+                                            </a>
+                                            {% set attempt = quiz.attempts.filter_by(student_id=current_user.id).first() %}
+                                            {% if attempt and attempt.completed_at and quiz.grades_released %}
+                                            <a href="{{ url_for('quiz.view_results', attempt_id=attempt.id) }}" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-chart-bar"></i> View Results
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                No shared quizzes available.
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- History Tab -->
+        <div class="tab-pane fade" id="history" role="tabpanel">
+            {% include 'student/history.html' %}
+        </div>
+        
+        <!-- Bookmarks Tab -->
+        <div class="tab-pane fade" id="bookmarks" role="tabpanel">
+            {% include 'student/bookmarks.html' %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

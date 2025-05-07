@@ -1,0 +1,106 @@
+from datetime import datetime
+from app import db
+from app.models.feedback import QuizFeedback
+
+# Association table for user bookmarks
+user_bookmarks = db.Table('user_bookmarks',
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+    db.Column('quiz_id', db.Integer, db.ForeignKey('quizzes.id'), primary_key=True),
+    db.Column('created_at', db.DateTime, default=datetime.utcnow)
+)
+
+class Quiz(db.Model):
+    __tablename__ = 'quizzes'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    is_public = db.Column(db.Boolean, default=True)
+    password = db.Column(db.String(128))
+    time_limit = db.Column(db.Integer)  # in minutes
+    max_attempts = db.Column(db.Integer, default=1)
+    start_time = db.Column(db.DateTime)
+    end_time = db.Column(db.DateTime)
+    category = db.Column(db.String(50))
+    grades_released = db.Column(db.Boolean, default=False)
+    
+    # Relationships
+    author = db.relationship('User', backref=db.backref('authored_quizzes', lazy='dynamic'))
+    questions = db.relationship('Question', backref='quiz', lazy='dynamic', cascade='all, delete-orphan')
+    attempts = db.relationship('QuizAttempt', backref='quiz', lazy='dynamic')
+    shared_with = db.relationship('User', secondary='shared_quizzes', backref=db.backref('shared_quizzes_list', lazy='dynamic'))
+    feedback = db.relationship(QuizFeedback, backref='quiz', lazy='dynamic', cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<Quiz {self.title}>'
+
+class Question(db.Model):
+    __tablename__ = 'questions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id'), nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    question_type = db.Column(db.String(20), default='mcq')  # mcq or descriptive
+    points = db.Column(db.Integer, default=1)
+    order = db.Column(db.Integer)
+    
+    # Relationships
+    options = db.relationship('QuestionOption', backref='question', lazy='dynamic', cascade='all, delete-orphan')
+    answers = db.relationship('Answer', backref='question', lazy='dynamic')
+
+    def __repr__(self):
+        return f'<Question {self.id}>'
+
+class QuestionOption(db.Model):
+    __tablename__ = 'question_options'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    question_id = db.Column(db.Integer, db.ForeignKey('questions.id'), nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    is_correct = db.Column(db.Boolean, default=False)
+    order = db.Column(db.Integer)
+
+    def __repr__(self):
+        return f'<QuestionOption {self.id}>'
+
+class Answer(db.Model):
+    __tablename__ = 'answers'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    attempt_id = db.Column(db.Integer, db.ForeignKey('quiz_attempts.id'), nullable=False)
+    question_id = db.Column(db.Integer, db.ForeignKey('questions.id'), nullable=False)
+    selected_option_id = db.Column(db.Integer, db.ForeignKey('question_options.id'))
+    text_answer = db.Column(db.Text)  # For descriptive questions
+    is_correct = db.Column(db.Boolean)
+    points_earned = db.Column(db.Float)
+    feedback = db.Column(db.Text)  # Teacher's feedback for descriptive answers
+
+    def __repr__(self):
+        return f'<Answer {self.id}>'
+
+class QuizAttempt(db.Model):
+    __tablename__ = 'quiz_attempts'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id'), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime)
+    completed = db.Column(db.Boolean, default=False)
+    score = db.Column(db.Float)
+    max_score = db.Column(db.Float)
+    
+    # Relationships
+    answers = db.relationship('Answer', backref='attempt', lazy='dynamic', cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<QuizAttempt {self.id}>'
+    
+    @property
+    def percentage_score(self):
+        if self.max_score and self.max_score > 0:
+            return (self.score / self.max_score) * 100
+        return 0 

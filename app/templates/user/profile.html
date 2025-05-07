@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}{{ user.username }}'s Profile{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <img src="{{ url_for('static', filename='img/' + user.profile_picture) }}" 
+                         class="rounded-circle profile-picture mb-3" 
+                         alt="{{ user.username }}'s profile picture">
+                    <h3 class="card-title">{{ user.username }}</h3>
+                    <p class="text-muted">
+                        {% if user.is_teacher %}Teacher{% else %}Student{% endif %}
+                    </p>
+                    {% if user == current_user %}
+                        <a href="{{ url_for('user.edit_profile', username=user.username) }}" 
+                           class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Edit Profile
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% if user.bio %}
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h5 class="card-title">About</h5>
+                        <p class="card-text">{{ user.bio }}</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        <div class="col-md-8">
+            {% if user.is_teacher %}
+                <h2>Created Quizzes</h2>
+                {% if user.quizzes_created.count() > 0 %}
+                    <div class="row row-cols-1 row-cols-md-2 g-4">
+                        {% for quiz in user.quizzes_created %}
+                            <div class="col">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ quiz.title }}</h5>
+                                        <p class="card-text">{{ quiz.description[:100] }}{% if quiz.description|length > 100 %}...{% endif %}</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="badge bg-primary">{{ quiz.category }}</span>
+                                            <a href="{{ url_for('quiz.view_quiz', quiz_id=quiz.id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No quizzes created yet.</p>
+                {% endif %}
+            {% else %}
+                <h2>Recent Quiz Attempts</h2>
+                {% if user.quiz_attempts.count() > 0 %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Quiz</th>
+                                    <th>Score</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attempt in user.quiz_attempts %}
+                                    <tr>
+                                        <td>{{ attempt.quiz.title }}</td>
+                                        <td>{{ "%.1f"|format(attempt.score|float) }}/{{ "%.1f"|format(attempt.max_score|float) }}</td>
+                                        <td>{{ attempt.completed_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            <a href="{{ url_for('quiz.view_results', attempt_id=attempt.id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                View Results
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No quiz attempts yet.</p>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

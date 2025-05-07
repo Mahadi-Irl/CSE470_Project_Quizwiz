@@ -1,0 +1,13 @@
+Dear {{ user.username }},
+
+Your results for the quiz "{{ quiz.title }}" are now available.
+
+Score: {{ score }}/{{ max_score }} ({{ "%.1f"|format(score/max_score*100) }}%)
+
+You can view detailed results and feedback by visiting:
+{{ url_for('quiz.view_results', attempt_id=attempt.id, _external=True) }}
+
+Thank you for taking the quiz!
+
+Sincerely,
+The Quizwizz Team 

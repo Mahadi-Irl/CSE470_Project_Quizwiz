@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz History{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h1 class="card-title mb-4">Quiz History</h1>
+                    
+                    {% if attempts %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Quiz</th>
+                                    <th>Category</th>
+                                    <th>Score</th>
+                                    <th>Attempt Date</th>
+                                    <th>Time Taken</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attempt in attempts %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('quiz.view_quiz', quiz_id=attempt.quiz.id) }}">
+                                            {{ attempt.quiz.title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ attempt.quiz.category|title }}</td>
+                                    <td>
+                                        {% if attempt.completed_at %}
+                                            {{ attempt.score }}/{{ attempt.max_score }}
+                                            <small class="text-muted">
+                                                ({{ "%.1f"|format(attempt.score / attempt.max_score * 100) }}%)
+                                            </small>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if attempt.completed_at %}
+                                            {{ attempt.completed_at.strftime('%Y-%m-%d %H:%M') }}
+                                        {% else %}
+                                            {{ attempt.started_at.strftime('%Y-%m-%d %H:%M') }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if attempt.completed_at %}
+                                            {{ ((attempt.completed_at - attempt.started_at).total_seconds() / 60)|round(1) }} minutes
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if attempt.completed_at %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">In Progress</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if attempt.completed_at %}
+                                            <a href="{{ url_for('quiz.view_results', attempt_id=attempt.id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                View Results
+                                            </a>
+                                        {% else %}
+                                            <a href="{{ url_for('quiz.take_quiz', quiz_id=attempt.quiz.id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                Continue Quiz
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <h3 class="text-muted">No quiz attempts yet</h3>
+                        <p class="text-muted">Start taking quizzes to see your history here.</p>
+                        <a href="{{ url_for('quiz.search_quizzes') }}" class="btn btn-primary">
+                            Find Quizzes
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

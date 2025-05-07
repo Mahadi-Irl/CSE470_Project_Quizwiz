@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block title %}Create Quiz{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .question-container {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .option-container {
+        background-color: white;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+    .remove-btn {
+        color: #dc3545;
+        cursor: pointer;
+    }
+    .remove-btn:hover {
+        color: #bb2d3b;
+    }
+    .flatpickr-input {
+        background-color: white !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h1 class="card-title mb-4">Create New Quiz</h1>
+                    <form method="POST" action="{{ url_for('quiz.create_quiz') }}" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Basic Quiz Information -->
+                        <div class="mb-4">
+                            <h3>Basic Information</h3>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        {{ form.title.label(class="form-label") }}
+                                        {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else "")) }}
+                                        {% for error in form.title.errors %}
+                                            <div class="invalid-feedback">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        {{ form.category.label(class="form-label") }}
+                                        {{ form.category(class="form-select" + (" is-invalid" if form.category.errors else "")) }}
+                                        {% for error in form.category.errors %}
+                                            <div class="invalid-feedback">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                {{ form.description.label(class="form-label") }}
+                                {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=3) }}
+                                {% for error in form.description.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Quiz Settings -->
+                        <div class="mb-4">
+                            <h3>Quiz Settings</h3>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        {{ form.time_limit.label(class="form-label") }}
+                                        {{ form.time_limit(class="form-control" + (" is-invalid" if form.time_limit.errors else "")) }}
+                                        {% for error in form.time_limit.errors %}
+                                            <div class="invalid-feedback">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        {{ form.max_attempts.label(class="form-label") }}
+                                        {{ form.max_attempts(class="form-control" + (" is-invalid" if form.max_attempts.errors else "")) }}
+                                        {% for error in form.max_attempts.errors %}
+                                            <div class="invalid-feedback">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        {{ form.is_public.label(class="form-label") }}
+                                        <div class="form-check form-switch">
+                                            {{ form.is_public(class="form-check-input") }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        {{ form.start_time.label(class="form-label") }}
+                                        {{ form.start_time(class="form-control datetime-picker" + (" is-invalid" if form.start_time.errors else "")) }}
+                                        {% for error in form.start_time.errors %}
+                                            <div class="invalid-feedback">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        {{ form.end_time.label(class="form-label") }}
+                                        {{ form.end_time(class="form-control datetime-picker" + (" is-invalid" if form.end_time.errors else "")) }}
+                                        {% for error in form.end_time.errors %}
+                                            <div class="invalid-feedback">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3" id="password-field" style="display: none;">
+                                {{ form.password.label(class="form-label") }}
+                                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else "")) }}
+                                {% for error in form.password.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Questions -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h3>Questions</h3>
+                                <button type="button" class="btn btn-primary" id="add-question">
+                                    <i class="bi bi-plus-circle"></i> Add Question
+                                </button>
+                            </div>
+                            <div id="questions-container">
+                                {% for question_form in form.questions %}
+                                    <div class="question-container" data-question-index="{{ loop.index0 }}">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h4>Question {{ loop.index }}</h4>
+                                            <button type="button" class="btn btn-outline-danger btn-sm remove-question">
+                                                <i class="bi bi-trash"></i> Remove
+                                            </button>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                <div class="mb-3">
+                                                    {{ question_form.text.label(class="form-label") }}
+                                                    {{ question_form.text(class="form-control" + (" is-invalid" if question_form.text.errors else "")) }}
+                                                    {% for error in question_form.text.errors %}
+                                                        <div class="invalid-feedback">{{ error }}</div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="mb-3">
+                                                    {{ question_form.points.label(class="form-label") }}
+                                                    {{ question_form.points(class="form-control" + (" is-invalid" if question_form.points.errors else "")) }}
+                                                    {% for error in question_form.points.errors %}
+                                                        <div class="invalid-feedback">{{ error }}</div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            {{ question_form.question_type.label(class="form-label") }}
+                                            {{ question_form.question_type(class="form-select" + (" is-invalid" if question_form.question_type.errors else "")) }}
+                                            {% for error in question_form.question_type.errors %}
+                                                <div class="invalid-feedback">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="options-container">
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <h5>Options</h5>
+                                                <button type="button" class="btn btn-outline-primary btn-sm add-option">
+                                                    <i class="bi bi-plus-circle"></i> Add Option
+                                                </button>
+                                            </div>
+                                            {% for option_form in question_form.options %}
+                                                <div class="option-container" data-option-index="{{ loop.index0 }}">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div class="form-check">
+                                                            {{ option_form.is_correct(class="form-check-input") }}
+                                                            {{ option_form.is_correct.label(class="form-check-label") }}
+                                                        </div>
+                                                        <button type="button" class="btn btn-outline-danger btn-sm remove-option">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div class="mt-2">
+                                                        {{ option_form.text(class="form-control" + (" is-invalid" if option_form.text.errors else "")) }}
+                                                        {% for error in option_form.text.errors %}
+                                                            <div class="invalid-feedback">{{ error }}</div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Create Quiz</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize datetime pickers
+    flatpickr(".datetime-picker", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        time_24hr: true,
+        minDate: "today"
+    });
+
+    // Handle public/private quiz toggle
+    const isPublicCheckbox = document.querySelector('input[name="is_public"]');
+    const passwordField = document.getElementById('password-field');
+    
+    isPublicCheckbox.addEventListener('change', function() {
+        passwordField.style.display = this.checked ? 'none' : 'block';
+    });
+
+    // Question and option management
+    const questionsContainer = document.getElementById('questions-container');
+    const addQuestionBtn = document.getElementById('add-question');
+
+    // Add question template
+    function getQuestionTemplate(index) {
+        return `
+            <div class="question-container" data-question-index="${index}">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4>Question ${index + 1}</h4>
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-question">
+                        <i class="bi bi-trash"></i> Remove
+                    </button>
+                </div>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <label class="form-label">Question Text</label>
+                            <textarea class="form-control" name="questions-${index}-text" required></textarea>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label">Points</label>
+                            <input type="number" class="form-control" name="questions-${index}-points" value="1" min="1" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Question Type</label>
+                    <select class="form-select" name="questions-${index}-question_type">
+                        <option value="mcq">Multiple Choice</option>
+                        <option value="descriptive">Descriptive</option>
+                    </select>
+                </div>
+                <div class="options-container">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5>Options</h5>
+                        <button type="button" class="btn btn-outline-primary btn-sm add-option">
+                            <i class="bi bi-plus-circle"></i> Add Option
+                        </button>
+                    </div>
+                    <div class="option-container" data-option-index="0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="questions-${index}-options-0-is_correct">
+                                <label class="form-check-label">Is Correct</label>
+                            </div>
+                            <button type="button" class="btn btn-outline-danger btn-sm remove-option">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                        <div class="mt-2">
+                            <textarea class="form-control" name="questions-${index}-options-0-text" required></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Add option template
+    function getOptionTemplate(questionIndex, optionIndex) {
+        return `
+            <div class="option-container" data-option-index="${optionIndex}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="questions-${questionIndex}-options-${optionIndex}-is_correct">
+                        <label class="form-check-label">Is Correct</label>
+                    </div>
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-option">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+                <div class="mt-2">
+                    <textarea class="form-control" name="questions-${questionIndex}-options-${optionIndex}-text" required></textarea>
+                </div>
+            </div>
+        `;
+    }
+
+    // Add question
+    addQuestionBtn.addEventListener('click', function() {
+        const questionCount = questionsContainer.children.length;
+        questionsContainer.insertAdjacentHTML('beforeend', getQuestionTemplate(questionCount));
+    });
+
+    // Remove question
+    questionsContainer.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-question')) {
+            const questionContainer = e.target.closest('.question-container');
+            if (questionsContainer.children.length > 1) {
+                questionContainer.remove();
+                updateQuestionNumbers();
+            }
+        }
+    });
+
+    // Add option
+    questionsContainer.addEventListener('click', function(e) {
+        if (e.target.closest('.add-option')) {
+            const questionContainer = e.target.closest('.question-container');
+            const optionsContainer = questionContainer.querySelector('.options-container');
+            const questionIndex = questionContainer.dataset.questionIndex;
+            const optionCount = optionsContainer.querySelectorAll('.option-container').length;
+            
+            optionsContainer.insertAdjacentHTML('beforeend', 
+                getOptionTemplate(questionIndex, optionCount));
+        }
+    });
+
+    // Remove option
+    questionsContainer.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-option')) {
+            const optionContainer = e.target.closest('.option-container');
+            const optionsContainer = optionContainer.parentElement;
+            if (optionsContainer.children.length > 1) {
+                optionContainer.remove();
+            }
+        }
+    });
+
+    // Update question numbers
+    function updateQuestionNumbers() {
+        questionsContainer.querySelectorAll('.question-container').forEach((container, index) => {
+            container.querySelector('h4').textContent = `Question ${index + 1}`;
+        });
+    }
+});
+</script>
+{% endblock %} 

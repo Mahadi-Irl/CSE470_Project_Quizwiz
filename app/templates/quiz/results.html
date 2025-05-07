@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Results - {{ quiz.title }}{% endblock %}
+
+{% block styles %}
+<style>
+    .question-result {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .correct-answer {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+    .incorrect-answer {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+    .score-badge {
+        font-size: 1.2rem;
+        padding: 10px 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h1 class="card-title mb-0">Quiz Results: {{ quiz.title }}</h1>
+                        <a href="{{ url_for('quiz.view_quiz', quiz_id=quiz.id) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Quiz
+                        </a>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5>Total Attempts</h5>
+                                    <h3>{{ total_attempts }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5>Average Score</h5>
+                                    <h3>{{ "%.1f"|format(avg_score) }}/{{ max_score }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5>Highest Score</h5>
+                                    <h3>{{ highest_score }}/{{ max_score }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5>Lowest Score</h5>
+                                    <h3>{{ lowest_score }}/{{ max_score }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4 class="mb-3">Question-wise Performance</h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Question</th>
+                                    <th>Type</th>
+                                    <th>Correct Answers</th>
+                                    <th>Success Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in question_stats %}
+                                <tr>
+                                    <td>{{ stat.question.text }}</td>
+                                    <td>
+                                        {% if stat.question.question_type == 'mcq' %}
+                                        Multiple Choice
+                                        {% else %}
+                                        Descriptive
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ stat.correct_count }}/{{ stat.total_attempts }}</td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar {% if stat.success_rate >= 70 %}bg-success{% elif stat.success_rate >= 40 %}bg-warning{% else %}bg-danger{% endif %}"
+                                                 role="progressbar"
+                                                 style="width: {{ stat.success_rate }}%"
+                                                 aria-valuenow="{{ stat.success_rate }}"
+                                                 aria-valuemin="0"
+                                                 aria-valuemax="100">
+                                                {{ "%.1f"|format(stat.success_rate) }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h4 class="mt-4 mb-3">Student Attempts</h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Date</th>
+                                    <th>Score</th>
+                                    <th>Percentage</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attempt in attempts %}
+                                <tr>
+                                    <td>{{ attempt.user.username }}</td>
+                                    <td>{{ attempt.completed_at.strftime('%B %d, %Y at %I:%M %p') }}</td>
+                                    <td>{{ attempt.score }}/{{ max_score }}</td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar {% if (attempt.score/max_score)*100 >= 70 %}bg-success{% elif (attempt.score/max_score)*100 >= 40 %}bg-warning{% else %}bg-danger{% endif %}"
+                                                 role="progressbar"
+                                                 style="width: {{ (attempt.score/max_score)*100 }}%"
+                                                 aria-valuenow="{{ (attempt.score/max_score)*100 }}"
+                                                 aria-valuemin="0"
+                                                 aria-valuemax="100">
+                                                {{ "%.1f"|format((attempt.score/max_score)*100) }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('quiz.view_results', attempt_id=attempt.id) }}" class="btn btn-sm btn-primary">
+                                            View Details
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if feedback %}
+                    <h5 class="mt-4">Student Feedback</h5>
+                    <div class="feedback-container">
+                        {% for item in feedback %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="card-subtitle mb-2 text-muted">
+                                        {{ item.student.username }} - {{ item.created_at.strftime('%B %d, %Y') }}
+                                    </h6>
+                                </div>
+                                <p class="card-text">{{ item.feedback }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

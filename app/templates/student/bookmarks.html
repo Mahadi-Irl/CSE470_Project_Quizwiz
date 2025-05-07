@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Bookmarked Quizzes{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h1 class="card-title mb-4">Bookmarked Quizzes</h1>
+            
+            {% if bookmarked_quizzes %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Quiz Title</th>
+                            <th>Category</th>
+                            <th>Time Limit</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for quiz in bookmarked_quizzes %}
+                        <tr>
+                            <td>{{ quiz.title }}</td>
+                            <td>{{ quiz.category }}</td>
+                            <td>
+                                {% if quiz.time_limit %}
+                                {{ quiz.time_limit }} minutes
+                                {% else %}
+                                No time limit
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% set attempt = quiz.attempts.filter_by(student_id=current_user.id).first() %}
+                                {% if attempt and attempt.completed_at %}
+                                    {% if quiz.grades_released %}
+                                    <span class="badge bg-success">Graded</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% endif %}
+                                {% else %}
+                                    {% if attempt %}
+                                    <span class="badge bg-info">In Progress</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Not Started</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('quiz.view_quiz', quiz_id=quiz.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View Quiz
+                                    </a>
+                                    
+                                    {% set attempt = quiz.attempts.filter_by(student_id=current_user.id).first() %}
+                                    {% if attempt and attempt.completed_at %}
+                                    <a href="{{ url_for('quiz.take_quiz', quiz_id=quiz.id) }}" 
+                                       class="btn btn-sm btn-primary">
+                                        <i class="bi bi-arrow-repeat"></i> Retake Quiz
+                                    </a>
+                                    {% else %}
+                                    <a href="{{ url_for('quiz.take_quiz', quiz_id=quiz.id) }}" 
+                                       class="btn btn-sm btn-success">
+                                        <i class="bi bi-play"></i> Take Quiz
+                                    </a>
+                                    {% endif %}
+                                    
+                                    {% if attempt and attempt.completed_at and quiz.grades_released %}
+                                    <a href="{{ url_for('quiz.view_results', attempt_id=attempt.id) }}" 
+                                       class="btn btn-sm btn-info">
+                                        <i class="bi bi-graph-up"></i> View Results
+                                    </a>
+                                    {% endif %}
+                                    
+                                    <button class="btn btn-sm btn-danger"
+                                            onclick="toggleBookmark({{ quiz.id }}, this)">
+                                        <i class="bi bi-bookmark-fill"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center text-muted">
+                <p>No bookmarked quizzes yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+function toggleBookmark(quizId, button) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    fetch(`/quiz/${quizId}/bookmark`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'removed') {
+            // Remove the row from the table
+            const row = button.closest('tr');
+            row.remove();
+            
+            // If no more bookmarks, show the empty message
+            if (document.querySelectorAll('tbody tr').length === 0) {
+                const tbody = document.querySelector('tbody');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">
+                            <p>No bookmarked quizzes yet.</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to update bookmark. Please try again.');
+    });
+}
+</script>
+{% endblock %}
+{% endblock %} 

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Teacher Dashboard</h1>
+        <a href="{{ url_for('quiz.create_quiz') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Create New Quiz
+        </a>
+    </div>
+
+    <!-- Quiz Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Quizzes</h5>
+                    <h3>{{ quizzes|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Attempts</h5>
+                    <h3>{{ quiz_stats|sum(attribute='total_attempts') }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Average Score</h5>
+                    <h3>{{ "%.1f"|format(quiz_stats|sum(attribute='avg_percentage') / quiz_stats|length if quiz_stats else 0) }}%</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Active Students</h5>
+                    <h3>{{ quiz_stats|sum(attribute='total_attempts') }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if not quizzes %}
+    <div class="text-center py-4">
+        <p class="text-muted">No quizzes created yet.</p>
+        <a href="{{ url_for('quiz.create_quiz') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Create Your First Quiz
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

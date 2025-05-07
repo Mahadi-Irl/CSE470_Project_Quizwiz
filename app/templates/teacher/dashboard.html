@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Teacher Dashboard</h1>
+        <a href="{{ url_for('quiz.create_quiz') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Create New Quiz
+        </a>
+    </div>
+
+    <!-- Quiz Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Quizzes</h5>
+                    <h3>{{ quizzes|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Attempts</h5>
+                    <h3>{{ quiz_stats|sum(attribute='total_attempts') }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Average Score</h5>
+                    <h3>{{ "%.1f"|format(quiz_stats|sum(attribute='avg_percentage') / quiz_stats|length if quiz_stats else 0) }}%</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Active Students</h5>
+                    <h3>{{ quiz_stats|sum(attribute='total_attempts') }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quizzes Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Your Quizzes</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Attempts</th>
+                            <th>Avg Score</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in quiz_stats %}
+                        <tr>
+                            <td>{{ stat.quiz.title }}</td>
+                            <td>{{ stat.quiz.category }}</td>
+                            <td>{{ stat.total_attempts }}</td>
+                            <td>
+                                {% if stat.total_attempts > 0 %}
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ stat.avg_percentage }}%"
+                                         aria-valuenow="{{ stat.avg_percentage }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ "%.1f"|format(stat.avg_percentage) }}%
+                                    </div>
+                                </div>
+                                {% else %}
+                                No attempts
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if stat.quiz.start_time and stat.quiz.start_time > now %}
+                                <span class="badge bg-info">Upcoming</span>
+                                {% elif stat.quiz.end_time and stat.quiz.end_time < now %}
+                                <span class="badge bg-secondary">Ended</span>
+                                {% else %}
+                                <span class="badge bg-success">Active</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('quiz.view_quiz', quiz_id=stat.quiz.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                    <a href="{{ url_for('quiz.edit_quiz', quiz_id=stat.quiz.id) }}" 
+                                       class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </a>
+                                    <a href="{{ url_for('quiz.quiz_results', quiz_id=stat.quiz.id) }}" 
+                                       class="btn btn-sm btn-outline-info">
+                                        <i class="bi bi-graph-up"></i> Results
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

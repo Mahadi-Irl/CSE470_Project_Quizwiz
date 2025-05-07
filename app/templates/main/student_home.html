@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Student Dashboard</h1>
+    
+    <!-- Performance Overview -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Quizzes</h5>
+                    <h2 class="display-4">{{ total_quizzes }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Completed Quizzes</h5>
+                    <h2 class="display-4">{{ completed_quizzes }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Average Score</h5>
+                    <h2 class="display-4">{{ "%.1f"|format(average_score) }}%</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

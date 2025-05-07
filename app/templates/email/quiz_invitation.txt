@@ -1,0 +1,18 @@
+Dear {{ user.username }},
+
+You have been invited to take the quiz "{{ quiz.title }}".
+
+{% if password %}
+To access the quiz, you'll need the following password:
+{{ password }}
+{% endif %}
+
+You can take the quiz by visiting:
+{{ url_for('quiz.take_quiz', quiz_id=quiz.id, _external=True) }}
+
+The quiz will be available until {{ quiz.end_time.strftime('%Y-%m-%d %H:%M') }}.
+
+Good luck!
+
+Sincerely,
+The Quizwizz Team 

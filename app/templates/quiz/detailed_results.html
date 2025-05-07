@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Detailed Results - {{ quiz.title }}{% endblock %}
+
+{% block styles %}
+<style>
+    .question-result {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .correct-answer {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+    .incorrect-answer {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+    .your-answer {
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+        color: #856404;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+    .score-badge {
+        font-size: 1.2rem;
+        padding: 10px 20px;
+    }
+    .option {
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 5px;
+        background-color: white;
+    }
+    .option.correct {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+    }
+    .option.incorrect {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+    }
+    .option.selected {
+        border: 2px solid #007bff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h1 class="card-title mb-0">Quiz Results: {{ quiz.title }}</h1>
+                        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5>Your Score</h5>
+                                    <h3>{{ attempt.score }}/{{ attempt.max_score }}</h3>
+                                    <p class="text-muted">
+                                        {{ "%.1f"|format((attempt.score / attempt.max_score) * 100) }}%
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5>Time Taken</h5>
+                                    <h3>{{ ((attempt.completed_at - attempt.started_at).total_seconds() / 60)|round(1) }} minutes</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5>Completion Date</h5>
+                                    <h3>{{ attempt.completed_at.strftime('%Y-%m-%d') }}</h3>
+                                    <p class="text-muted">{{ attempt.completed_at.strftime('%I:%M %p') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4 class="mb-3">Question-wise Breakdown</h4>
+                    {% for answer in attempt.answers %}
+                    <div class="question-result">
+                        <h5>Question {{ loop.index }}: {{ answer.question.text }}</h5>
+                        <p class="text-muted">
+                            Points: {{ answer.points_earned }}/{{ answer.question.points }}
+                            {% if answer.is_correct %}
+                            <span class="badge bg-success">Correct</span>
+                            {% else %}
+                            <span class="badge bg-danger">Incorrect</span>
+                            {% endif %}
+                        </p>
+
+                        {% if answer.question.question_type == 'mcq' %}
+                            <div class="options">
+                                {% for option in answer.question.options %}
+                                <div class="option {% if option.is_correct %}correct{% endif %} {% if option.id == answer.selected_option_id %}selected{% endif %}">
+                                    {{ option.text }}
+                                    {% if option.is_correct %}
+                                    <i class="fas fa-check text-success"></i>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="your-answer">
+                                <strong>Your Answer:</strong><br>
+                                {{ answer.text_answer }}
+                            </div>
+                            {% if not answer.is_correct %}
+                            <div class="correct-answer">
+                                <strong>Correct Answer:</strong><br>
+                                {{ answer.question.correct_answer }}
+                            </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    {% if not attempt.feedback %}
+                    <div class="mt-4">
+                        <a href="{{ url_for('quiz.submit_feedback', quiz_id=quiz.id) }}" class="btn btn-outline-primary">
+                            Provide Feedback
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

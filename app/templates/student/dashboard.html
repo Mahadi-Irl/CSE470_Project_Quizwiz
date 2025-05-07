@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h1 class="card-title mb-4">Student Dashboard</h1>
+
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5>Quizzes Taken</h5>
+                                    <h3>{{ completed_quizzes|length }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5>In Progress</h5>
+                                    <h3>{{ in_progress_quizzes|length }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5>Available</h5>
+                                    <h3>{{ available_quizzes|length }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if in_progress_quizzes %}
+                    <h4 class="mb-3">In Progress Quizzes</h4>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Category</th>
+                                    <th>Started</th>
+                                    <th>Time Left</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for quiz in in_progress_quizzes %}
+                                <tr>
+                                    <td>{{ quiz.title }}</td>
+                                    <td>{{ quiz.category }}</td>
+                                    <td>{{ quiz.attempts[-1].started_at.strftime('%B %d, %Y at %I:%M %p') }}</td>
+                                    <td>
+                                        {% if quiz.time_limit %}
+                                        <span class="text-warning">
+                                            {{ quiz.attempts[-1].time_left }} minutes
+                                        </span>
+                                        {% else %}
+                                        No time limit
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('quiz.take_quiz', quiz_id=quiz.id) }}" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-play"></i> Continue Quiz
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+
+                    {% if completed_quizzes %}
+                    <h4 class="mb-3">Completed Quizzes</h4>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Category</th>
+                                    <th>Completed</th>
+                                    <th>Score</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for quiz in completed_quizzes %}
+                                <tr>
+                                    <td>{{ quiz.title }}</td>
+                                    <td>{{ quiz.category }}</td>
+                                    <td>{{ quiz.attempts[-1].completed_at.strftime('%B %d, %Y at %I:%M %p') }}</td>
+                                    <td>
+                                        {% if quiz.grades_released %}
+                                        {{ quiz.attempts[-1].score }}/{{ quiz.attempts[-1].max_score }}
+                                        {% else %}
+                                        Pending
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if quiz.grades_released %}
+                                        <span class="badge bg-success">Graded</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if quiz.grades_released %}
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('quiz.view_results', attempt_id=quiz.attempts[-1].id) }}" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-eye"></i> View Results
+                                            </a>
+                                            {% if not quiz.attempts[-1].feedback %}
+                                            <a href="{{ url_for('quiz.submit_feedback', quiz_id=quiz.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-comment"></i> Provide Feedback
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">Waiting for grades to be released</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+
+                    {% if available_quizzes %}
+                    <h4 class="mb-3">Available Quizzes</h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Category</th>
+                                    <th>Author</th>
+                                    <th>Questions</th>
+                                    <th>Time Limit</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for quiz in available_quizzes %}
+                                <tr>
+                                    <td>{{ quiz.title }}</td>
+                                    <td>{{ quiz.category }}</td>
+                                    <td>{{ quiz.author.username }}</td>
+                                    <td>{{ quiz.questions.count() }}</td>
+                                    <td>
+                                        {% if quiz.time_limit %}
+                                        {{ quiz.time_limit }} minutes
+                                        {% else %}
+                                        No time limit
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('quiz.take_quiz', quiz_id=quiz.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-play"></i> Start Quiz
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+
+                    {% if not in_progress_quizzes and not completed_quizzes and not available_quizzes %}
+                    <div class="text-center text-muted">
+                        <p>No quizzes available at the moment.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
