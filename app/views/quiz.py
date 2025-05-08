@@ -163,7 +163,7 @@ def take_quiz(quiz_id):
         flash('This quiz is over. Grades have been released.', 'info')
         return redirect(url_for('main.index'))
     
-    # Check time restrictions    
+    # Check time restrictions
     now = datetime.now()
     if quiz.start_time > now:
         flash('This quiz is not available yet.', 'info')
@@ -577,6 +577,13 @@ def release_grades(quiz_id):
     
     quiz.grades_released = True
     db.session.commit()
+    
+    sent_to = set()
+    for attempt in quiz.attempts:
+        if attempt.completed and attempt.student_id not in sent_to:
+            send_quiz_grades_email(attempt.student, quiz, attempt)
+            sent_to.add(attempt.student_id)
+
     flash('Grades have been released to students.', 'success')
     return redirect(url_for('quiz.quiz_results', quiz_id=quiz_id))
 
