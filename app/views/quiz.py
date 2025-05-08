@@ -601,6 +601,16 @@ def student_history():
     attempts = QuizAttempt.query.filter_by(student_id=current_user.id).order_by(QuizAttempt.started_at.desc()).all()
     return render_template('quiz/history.html', attempts=attempts)
 
+@quiz_bp.route('/student/bookmarks')
+@login_required
+def student_bookmarks():
+    if current_user.is_teacher:
+        flash('This page is for students only.', 'warning')
+        return redirect(url_for('main.index'))
+    
+    bookmarked_quizzes = current_user.bookmarked_quizzes.all()
+    return render_template('student/bookmarks.html', bookmarked_quizzes=bookmarked_quizzes)
+
 @quiz_bp.route('/student/performance')
 @login_required
 def student_performance():

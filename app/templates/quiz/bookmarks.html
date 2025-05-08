@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Bookmarked Quizzes{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h1 class="card-title mb-4">Bookmarked Quizzes</h1>
+                    
+                    {% if quizzes %}
+                    <div class="row row-cols-1 row-cols-md-2 g-4">
+                        {% for quiz in quizzes %}
+                        <div class="col">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ quiz.title }}</h5>
+                                    <p class="card-text text-muted">{{ quiz.description }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-primary">{{ quiz.category|title }}</span>
+                                        <small class="text-muted">
+                                            {{ quiz.questions|length }} questions
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <a href="{{ url_for('quiz.view_quiz', quiz_id=quiz.id) }}" 
+                                           class="btn btn-outline-primary">
+                                            View Quiz
+                                        </a>
+                                        <button class="btn btn-outline-danger bookmark-btn" 
+                                                data-quiz-id="{{ quiz.id }}">
+                                            <i class="bi bi-bookmark-fill"></i> Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <h3 class="text-muted">No bookmarked quizzes</h3>
+                        <p class="text-muted">Bookmark quizzes to save them for later.</p>
+                        <a href="{{ url_for('quiz.search_quizzes') }}" class="btn btn-primary">
+                            Find Quizzes
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle bookmark removal
+    document.querySelectorAll('.bookmark-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const quizId = this.dataset.quizId;
+            fetch(`/quiz/${quizId}/bookmark`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'removed') {
+                    // Remove the quiz card from the view
+                    this.closest('.col').remove();
+                    
+                    // If no quizzes left, show the empty state
+                    if (document.querySelectorAll('.col').length === 0) {
+                        location.reload();
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to remove bookmark. Please try again.');
+            });
+        });
+    });
+});
+</script>
+{% endblock %} 
