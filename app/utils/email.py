@@ -80,6 +80,7 @@ def send_quiz_grades_email(user, quiz, attempt):
     
     send_email(
         subject=subject,
+        sender=current_app.config['MAIL_USERNAME'],
         recipients=[user.email],
         template=template,
         user=user,
@@ -87,4 +88,4 @@ def send_quiz_grades_email(user, quiz, attempt):
         attempt=attempt,
         percentage=percentage,
         grade_category=grade_category
-    ) 
+    )
