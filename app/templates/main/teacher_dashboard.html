@@ -20,6 +20,15 @@
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h2 class="card-title mb-4">Your Quizzes</h2>
+                    <div class="mb-3">
+                        <label for="categoryFilter" class="form-label">Filter by Category:</label>
+                        <select id="categoryFilter" class="form-select" onchange="filterByCategory(this.value)">
+                            <option value="">All Categories</option>
+                            {% for category in categories %}
+                                <option value="{{ category }}" {% if category == selected_category %}selected{% endif %}>{{ category }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     {% if quizzes %}
                         <div class="table-responsive">
                             <table class="table table-hover">
@@ -98,6 +107,16 @@ function confirmDelete(url) {
         document.body.appendChild(form);
         form.submit();
     }
+}
+
+function filterByCategory(category) {
+    const url = new URL(window.location.href);
+    if (category) {
+        url.searchParams.set('category', category);
+    } else {
+        url.searchParams.delete('category');
+    }
+    window.location.href = url.toString();
 }
 </script>
 {% endblock %} 

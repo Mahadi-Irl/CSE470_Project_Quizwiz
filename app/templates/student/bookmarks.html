@@ -8,7 +8,7 @@
         <div class="card-body">
             <h1 class="card-title mb-4">Bookmarked Quizzes</h1>
             
-            {% if bookmarked_quizzes %}
+            {% if quiz_data %}
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
@@ -21,7 +21,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for quiz in bookmarked_quizzes %}
+                        {% for quiz, attempt in quiz_data %}
                         <tr>
                             <td>{{ quiz.title }}</td>
                             <td>{{ quiz.category }}</td>
@@ -33,7 +33,6 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% set attempt = quiz.attempts.filter_by(student_id=current_user.id).first() %}
                                 {% if attempt and attempt.completed_at %}
                                     {% if quiz.grades_released %}
                                     <span class="badge bg-success">Graded</span>
@@ -55,7 +54,6 @@
                                         <i class="bi bi-eye"></i> View Quiz
                                     </a>
                                     
-                                    {% set attempt = quiz.attempts.filter_by(student_id=current_user.id).first() %}
                                     {% if attempt and attempt.completed_at %}
                                     <a href="{{ url_for('quiz.take_quiz', quiz_id=quiz.id) }}" 
                                        class="btn btn-sm btn-primary">
@@ -100,7 +98,7 @@
 function toggleBookmark(quizId, button) {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     
-    fetch(`/quiz/${quizId}/bookmark`, {
+    fetch(`{{ url_for('quiz.toggle_bookmark', quiz_id=0) }}`.replace('0', quizId), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

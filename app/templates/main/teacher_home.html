@@ -3,45 +3,99 @@
 {% block title %}Teacher Dashboard{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Teacher Dashboard</h1>
-        <a href="{{ url_for('quiz.create_quiz') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Create New Quiz
-        </a>
-    </div>
-
+<div class="container">
+    <h1 class="mb-4">Teacher Dashboard</h1>
+    
     <!-- Quiz Statistics -->
     <div class="row mb-4">
         <div class="col-md-3">
             <div class="card">
-                <div class="card-body">
+                <div class="card-body text-center">
                     <h5 class="card-title">Total Quizzes</h5>
-                    <h3>{{ quizzes|length }}</h3>
+                    <h2 class="display-4">{{ quizzes|length }}</h2>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card">
-                <div class="card-body">
+                <div class="card-body text-center">
                     <h5 class="card-title">Total Attempts</h5>
-                    <h3>{{ quiz_stats|sum(attribute='total_attempts') }}</h3>
+                    <h2 class="display-4">{{ quiz_stats|sum(attribute='total_attempts') }}</h2>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card">
-                <div class="card-body">
+                <div class="card-body text-center">
                     <h5 class="card-title">Average Score</h5>
-                    <h3>{{ "%.1f"|format(quiz_stats|sum(attribute='avg_percentage') / quiz_stats|length if quiz_stats else 0) }}%</h3>
+                    <h2 class="display-4">{{ "%.1f"|format(quiz_stats|sum(attribute='avg_percentage') / quiz_stats|length if quiz_stats else 0) }}%</h2>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card">
-                <div class="card-body">
+                <div class="card-body text-center">
                     <h5 class="card-title">Active Students</h5>
-                    <h3>{{ quiz_stats|sum(attribute='total_attempts') }}</h3>
+                    <h2 class="display-4">{{ quiz_stats|sum(attribute='total_attempts') }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity and Performance -->
+    <div class="row mb-4">
+        <!-- Recent Attempts -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Attempts</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_attempts %}
+                        <div class="list-group list-group-flush">
+                            {% for attempt in recent_attempts %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ attempt.quiz.title }}</h6>
+                                            <small class="text-muted">By {{ attempt.student.username }} - {{ attempt.completed_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        </div>
+                                        <span class="badge bg-primary">{{ "%.1f"|format(attempt.percentage_score) }}%</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center mb-0">No recent attempts</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Popular Quizzes -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Most Popular Quizzes</h5>
+                </div>
+                <div class="card-body">
+                    {% if popular_quizzes %}
+                        <div class="list-group list-group-flush">
+                            {% for quiz_data in popular_quizzes %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ quiz_data.quiz.title }}</h6>
+                                            <small class="text-muted">{{ quiz_data.quiz.category }} - {{ quiz_data.quiz.attempts|length }} attempts</small>
+                                        </div>
+                                        <span class="badge bg-success">{{ "%.1f"|format(quiz_data.avg_score) }}%</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center mb-0">No quizzes available</p>
+                    {% endif %}
                 </div>
             </div>
         </div>

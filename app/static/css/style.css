@@ -162,4 +162,13 @@ main {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* Highlight active nav-link more distinctly */
+.nav-link.active {
+    background-color: #fff !important;
+    color: #0d6efd !important;
+    border-radius: 5px;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(13,110,253,0.08);
 } 

@@ -32,7 +32,7 @@
                             <div class="card bg-light">
                                 <div class="card-body text-center">
                                     <h5>Total Attempts</h5>
-                                    <h3>{{ quiz.attempts.count() }}</h3>
+                                    <h3>{{ total_attempts }}</h3>
                                 </div>
                             </div>
                         </div>
@@ -201,9 +201,9 @@
                 <div class="card-body">
                     <h5>Questions</h5>
                     {% if current_user.is_authenticated and current_user.id == quiz.author_id %}
-                        <p class="text-muted">This quiz contains {{ quiz.questions.count() }} questions.</p>
+                        <p class="text-muted">This quiz contains {{ total_questions }} questions.</p>
                     {% else %}
-                        <p class="text-muted">This quiz contains {{ quiz.questions.count() }} questions. You'll see them when you start the quiz.</p>
+                        <p class="text-muted">This quiz contains {{ total_questions }} questions. You'll see them when you start the quiz.</p>
                     {% endif %}
                 </div>
             </div>

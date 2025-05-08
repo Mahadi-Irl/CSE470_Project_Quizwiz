@@ -131,7 +131,7 @@
                             <tbody>
                                 {% for attempt in attempts %}
                                 <tr>
-                                    <td>{{ attempt.user.username }}</td>
+                                    <td>{{ attempt.student.username }}</td>
                                     <td>{{ attempt.completed_at.strftime('%B %d, %Y at %I:%M %p') }}</td>
                                     <td>{{ attempt.score }}/{{ max_score }}</td>
                                     <td>

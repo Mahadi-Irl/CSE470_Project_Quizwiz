@@ -11,20 +11,18 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128))
+    role = db.Column(db.String(20), nullable=False, default='student')
     is_teacher = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     profile_picture = db.Column(db.String(200), default='default.jpg')
     bio = db.Column(db.Text)
     
     # Relationships
-    attempts = db.relationship('QuizAttempt', backref='user', lazy='dynamic')
+    quizzes = db.relationship('Quiz', back_populates='author', lazy='dynamic')
+    quiz_attempts = db.relationship('QuizAttempt', back_populates='student', lazy='dynamic', overlaps="attempts,user")
+    shared_quizzes = db.relationship('Quiz', secondary='shared_quizzes', back_populates='shared_with_users', lazy='dynamic', overlaps="shared_quizzes_list,shared_with_users")
     feedback = db.relationship(QuizFeedback, backref='student', lazy='dynamic')
-    quiz_attempts = db.relationship('QuizAttempt', backref='student', lazy='dynamic')
     bookmarks = db.relationship('Bookmark', backref='user', lazy='dynamic')
-    shared_quizzes = db.relationship('Quiz', 
-                                   secondary='shared_quizzes',
-                                   backref=db.backref('shared_with_users', lazy='dynamic'),
-                                   lazy='dynamic')
     bookmarked_quizzes = db.relationship('Quiz', 
                                        secondary='user_bookmarks',
                                        backref=db.backref('bookmarked_by', lazy='dynamic'),

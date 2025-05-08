@@ -24,27 +24,27 @@
                     {% if current_user.is_authenticated %}
                         {% if current_user.is_teacher %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('main.teacher_home') }}">Home</a>
+                                <a class="nav-link {% if request.endpoint == 'main.teacher_home' %}active{% endif %}" href="{{ url_for('main.teacher_home') }}">Home</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('quiz.create_quiz') }}">Create Quiz</a>
+                                <a class="nav-link {% if request.endpoint == 'quiz.create_quiz' %}active{% endif %}" href="{{ url_for('quiz.create_quiz') }}">Create Quiz</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('main.history') }}">History</a>
+                                <a class="nav-link {% if (current_user.is_teacher and request.endpoint == 'main.history') or (not current_user.is_teacher and request.endpoint == 'main.student_history') %}active{% endif %}" href="{{ url_for('main.history') if current_user.is_teacher else url_for('main.student_history') }}">History</a>
                             </li>
                         {% else %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('main.student_home') }}">Home</a>
+                                <a class="nav-link {% if request.endpoint == 'main.student_home' %}active{% endif %}" href="{{ url_for('main.student_home') }}">Home</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('main.student_history') }}">History</a>
+                                <a class="nav-link {% if request.endpoint == 'main.student_history' %}active{% endif %}" href="{{ url_for('main.student_history') }}">History</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('main.student_bookmarks') }}">Bookmarks</a>
+                                <a class="nav-link {% if request.endpoint == 'main.student_bookmarks' %}active{% endif %}" href="{{ url_for('main.student_bookmarks') }}">Bookmarks</a>
                             </li>
                         {% endif %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('quiz.search_quizzes') }}">Search Quizzes</a>
+                            <a class="nav-link {% if request.endpoint == 'quiz.search_quizzes' %}active{% endif %}" href="{{ url_for('quiz.search_quizzes') }}">Search Quizzes</a>
                         </li>
                     {% endif %}
                 </ul>

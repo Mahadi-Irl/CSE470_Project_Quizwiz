@@ -76,7 +76,10 @@ class QuizForm(FlaskForm):
 
 class QuizSearchForm(FlaskForm):
     search = StringField('Search Quizzes', validators=[Optional()])
-    category = SelectField('Category', choices=QUIZ_CATEGORIES, validators=[Optional()])
+    category = SelectField('Category', 
+                         choices=[('', 'All Categories')] + QUIZ_CATEGORIES, 
+                         validators=[Optional()],
+                         default='')
     submit = SubmitField('Search')
 
 class QuizPasswordForm(FlaskForm):

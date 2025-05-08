@@ -15,9 +15,9 @@ class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     is_public = db.Column(db.Boolean, default=True)
     password = db.Column(db.String(128))
     time_limit = db.Column(db.Integer)  # in minutes
@@ -28,10 +28,10 @@ class Quiz(db.Model):
     grades_released = db.Column(db.Boolean, default=False)
     
     # Relationships
-    author = db.relationship('User', backref=db.backref('authored_quizzes', lazy='dynamic'))
-    questions = db.relationship('Question', backref='quiz', lazy='dynamic', cascade='all, delete-orphan')
-    attempts = db.relationship('QuizAttempt', backref='quiz', lazy='dynamic')
-    shared_with = db.relationship('User', secondary='shared_quizzes', backref=db.backref('shared_quizzes_list', lazy='dynamic'))
+    author = db.relationship('User', back_populates='quizzes')
+    questions = db.relationship('Question', back_populates='quiz', cascade='all, delete-orphan')
+    attempts = db.relationship('QuizAttempt', back_populates='quiz', cascade='all, delete-orphan')
+    shared_with_users = db.relationship('User', secondary='shared_quizzes', back_populates='shared_quizzes', lazy='dynamic', overlaps="shared_quizzes_list,shared_with")
     feedback = db.relationship(QuizFeedback, backref='quiz', lazy='dynamic', cascade='all, delete-orphan')
 
     def __repr__(self):
@@ -48,8 +48,9 @@ class Question(db.Model):
     order = db.Column(db.Integer)
     
     # Relationships
-    options = db.relationship('QuestionOption', backref='question', lazy='dynamic', cascade='all, delete-orphan')
-    answers = db.relationship('Answer', backref='question', lazy='dynamic')
+    quiz = db.relationship('Quiz', back_populates='questions')
+    options = db.relationship('QuestionOption', back_populates='question', lazy='dynamic', cascade='all, delete-orphan')
+    answers = db.relationship('Answer', back_populates='question', lazy='dynamic')
 
     def __repr__(self):
         return f'<Question {self.id}>'
@@ -62,6 +63,9 @@ class QuestionOption(db.Model):
     text = db.Column(db.Text, nullable=False)
     is_correct = db.Column(db.Boolean, default=False)
     order = db.Column(db.Integer)
+    
+    # Relationships
+    question = db.relationship('Question', back_populates='options')
 
     def __repr__(self):
         return f'<QuestionOption {self.id}>'
@@ -77,6 +81,11 @@ class Answer(db.Model):
     is_correct = db.Column(db.Boolean)
     points_earned = db.Column(db.Float)
     feedback = db.Column(db.Text)  # Teacher's feedback for descriptive answers
+    
+    # Relationships
+    attempt = db.relationship('QuizAttempt', back_populates='answers')
+    question = db.relationship('Question', back_populates='answers')
+    selected_option = db.relationship('QuestionOption')
 
     def __repr__(self):
         return f'<Answer {self.id}>'
@@ -94,7 +103,9 @@ class QuizAttempt(db.Model):
     max_score = db.Column(db.Float)
     
     # Relationships
-    answers = db.relationship('Answer', backref='attempt', lazy='dynamic', cascade='all, delete-orphan')
+    quiz = db.relationship('Quiz', back_populates='attempts')
+    student = db.relationship('User', back_populates='quiz_attempts', overlaps="attempts,user")
+    answers = db.relationship('Answer', back_populates='attempt', cascade='all, delete-orphan')
     
     def __repr__(self):
         return f'<QuizAttempt {self.id}>'

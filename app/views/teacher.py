@@ -11,7 +11,7 @@ teacher_bp = Blueprint('teacher', __name__, url_prefix='/teacher')
 @login_required
 def dashboard():
     if not current_user.is_teacher:
-        flash('Access denied. Teachers only.', 'danger')
+        flash('Access denied.', 'danger')
         return redirect(url_for('main.index'))
     
     # Get all quizzes created by the teacher
@@ -20,28 +20,19 @@ def dashboard():
     # Calculate statistics for each quiz
     quiz_stats = []
     for quiz in quizzes:
-        attempts = QuizAttempt.query.filter_by(quiz_id=quiz.id).all()
+        attempts = quiz.attempts  # This is already a list
         total_attempts = len(attempts)
         if total_attempts > 0:
             scores = [attempt.score for attempt in attempts if attempt.score is not None]
-            if scores:  # Only calculate if we have valid scores
-                avg_score = sum(scores) / len(scores)
-                max_score = sum(question.points for question in quiz.questions)
-                highest_score = max(scores)
-                lowest_score = min(scores)
-                avg_percentage = (avg_score / max_score) * 100
-            else:
-                avg_score = 0
-                max_score = sum(question.points for question in quiz.questions)
-                highest_score = 0
-                lowest_score = 0
-                avg_percentage = 0
+            avg_score = sum(scores) / len(scores) if scores else 0
+            max_score = sum(question.points for question in quiz.questions)
+            highest_score = max(scores) if scores else 0
+            lowest_score = min(scores) if scores else 0
         else:
             avg_score = 0
             max_score = sum(question.points for question in quiz.questions)
             highest_score = 0
             lowest_score = 0
-            avg_percentage = 0
         
         quiz_stats.append({
             'quiz': quiz,
@@ -49,14 +40,10 @@ def dashboard():
             'avg_score': avg_score,
             'max_score': max_score,
             'highest_score': highest_score,
-            'lowest_score': lowest_score,
-            'avg_percentage': avg_percentage
+            'lowest_score': lowest_score
         })
     
-    return render_template('teacher/dashboard.html', 
-                         quizzes=quizzes,
-                         quiz_stats=quiz_stats,
-                         now=datetime.utcnow())
+    return render_template('teacher/dashboard.html', quiz_stats=quiz_stats)
 
 @teacher_bp.route('/quiz/<int:quiz_id>/results')
 @login_required

@@ -64,11 +64,6 @@
                                                     <a href="{{ url_for('quiz.view_quiz', quiz_id=quiz.id) }}" class="btn btn-sm btn-primary">
                                                         View Quiz
                                                     </a>
-                                                    <button type="button" class="btn btn-sm btn-outline-primary bookmark-btn" 
-                                                            data-quiz-id="{{ quiz.id }}"
-                                                            onclick="toggleBookmark(this)">
-                                                        <i class="bi bi-bookmark"></i>
-                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
@@ -86,28 +81,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-function toggleBookmark(button) {
-    const quizId = button.dataset.quizId;
-    fetch(`/quiz/${quizId}/bookmark`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ form.csrf_token.current_token }}'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'added') {
-            button.classList.add('active');
-        } else {
-            button.classList.remove('active');
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
-</script>
 {% endblock %} 

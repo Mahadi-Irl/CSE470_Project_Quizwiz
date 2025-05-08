@@ -36,25 +36,26 @@ def create_quiz():
                 max_attempts=form.max_attempts.data,
                 start_time=form.start_time.data or datetime.utcnow(),
                 end_time=form.end_time.data,
-                author_id=current_user.id
+                author_id=current_user.id,
+                grades_released=False  # Initialize as not released
             )
             db.session.add(quiz)
             
-            for q_form in form.questions:
+            for q_index, q_form in enumerate(form.questions):
                 question = Question(
                     text=q_form.text.data,
                     question_type=q_form.question_type.data,
                     points=q_form.points.data,
-                    order=q_form.order.data,
+                    order=q_index + 1,  # Use form index as order
                     quiz=quiz
                 )
                 db.session.add(question)
                 
-                for o_form in q_form.options:
+                for o_index, o_form in enumerate(q_form.options):
                     option = QuestionOption(
                         text=o_form.text.data,
                         is_correct=o_form.is_correct.data,
-                        order=o_form.order.data,
+                        order=o_index + 1,  # Use form index as order
                         question=question
                     )
                     db.session.add(option)
@@ -77,12 +78,12 @@ def view_quiz(quiz_id):
         if not quiz.password:
             flash('This quiz is private.', 'danger')
             return redirect(url_for('main.index'))
-        if quiz not in current_user.shared_quizzes_list:
+        if quiz not in current_user.shared_quizzes:
             return redirect(url_for('quiz.enter_password', quiz_id=quiz_id))
     
     # Calculate statistics
-    attempts = quiz.attempts.all()
-    total_attempts = len(attempts)
+    attempts = quiz.attempts  # This is already a list
+    total_attempts = len(attempts)  # Use len() instead of count()
     if total_attempts > 0:
         scores = [attempt.score for attempt in attempts if attempt.score is not None]
         avg_score = sum(scores) / len(scores) if scores else 0
@@ -108,9 +109,14 @@ def view_quiz(quiz_id):
     if current_user.id == quiz.author_id:
         feedback = quiz.feedback.all()
     
+    # Calculate total questions
+    total_questions = len(quiz.questions)
+    
     return render_template('quiz/view.html', 
                          quiz=quiz,
                          attempts=student_attempts,
+                         total_attempts=total_attempts,
+                         total_questions=total_questions,  # Pass total_questions to template
                          avg_score=avg_score,
                          max_score=max_score,
                          highest_score=highest_score,
@@ -128,8 +134,8 @@ def enter_password(quiz_id):
     if form.validate_on_submit():
         if form.password.data == quiz.password:
             # Share quiz with user
-            if quiz not in current_user.shared_quizzes_list:
-                current_user.shared_quizzes_list.append(quiz)
+            if quiz not in current_user.shared_quizzes:
+                current_user.shared_quizzes.append(quiz)
                 db.session.commit()
                 flash('Quiz accessed successfully!', 'success')
             else:
@@ -149,7 +155,7 @@ def take_quiz(quiz_id):
         if not quiz.password:
             flash('This quiz is private.', 'danger')
             return redirect(url_for('main.index'))
-        if quiz not in current_user.shared_quizzes_list:
+        if quiz not in current_user.shared_quizzes:
             return redirect(url_for('quiz.enter_password', quiz_id=quiz_id))
     
     # Check if grades have been released and user is a student
@@ -292,14 +298,14 @@ def edit_quiz(quiz_id):
                     question.text = q_form.text.data
                     question.question_type = q_form.question_type.data
                     question.points = q_form.points.data
-                    question.order = q_form.order.data
+                    question.order = q_index + 1
             else:
                 # Create new question
                 question = Question(
                     text=q_form.text.data,
                     question_type=q_form.question_type.data,
                     points=q_form.points.data,
-                    order=q_form.order.data,
+                    order=q_index + 1,
                     quiz=quiz
                 )
                 db.session.add(question)
@@ -326,13 +332,13 @@ def edit_quiz(quiz_id):
                     if option and option.question_id == question.id:
                         option.text = o_form.text.data
                         option.is_correct = o_form.is_correct.data
-                        option.order = o_form.order.data
+                        option.order = o_index + 1
                 else:
                     # Create new option
                     option = QuestionOption(
                         text=o_form.text.data,
                         is_correct=o_form.is_correct.data,
-                        order=o_form.order.data,
+                        order=o_index + 1,
                         question=question
                     )
                     db.session.add(option)
@@ -444,12 +450,12 @@ def enter_quiz_link():
             if not quiz.password:
                 flash('This quiz is private.', 'danger')
                 return redirect(url_for('main.index'))
-            if quiz not in current_user.shared_quizzes_list:
+            if quiz not in current_user.shared_quizzes:
                 return redirect(url_for('quiz.enter_password', quiz_id=quiz_id))
         
         # If we get here, either the quiz is public or the user has access
-        if quiz not in current_user.shared_quizzes_list:
-            current_user.shared_quizzes_list.append(quiz)
+        if quiz not in current_user.shared_quizzes:
+            current_user.shared_quizzes.append(quiz)
             db.session.commit()
             flash('Quiz has been added to your dashboard!', 'success')
         else:
@@ -474,12 +480,12 @@ def take_shared_quiz(quiz_id):
         if not quiz.password:
             flash('This quiz is private.', 'danger')
             return redirect(url_for('main.index'))
-        if quiz not in current_user.shared_quizzes_list:
+        if quiz not in current_user.shared_quizzes:
             return redirect(url_for('quiz.enter_password', quiz_id=quiz_id))
     
     # If we get here, either the quiz is public or the user has access
-    if quiz not in current_user.shared_quizzes_list:
-        current_user.shared_quizzes_list.append(quiz)
+    if quiz not in current_user.shared_quizzes:
+        current_user.shared_quizzes.append(quiz)
         db.session.commit()
         flash('Quiz has been added to your dashboard!', 'success')
     
@@ -717,7 +723,7 @@ def student_dashboard():
     # Get all quizzes the student has access to
     accessible_quizzes = Quiz.query.filter(
         (Quiz.is_public == True) |  # Public quizzes
-        (Quiz.id.in_([q.id for q in current_user.shared_quizzes_list]))  # Shared quizzes
+        (Quiz.id.in_([q.id for q in current_user.shared_quizzes]))  # Shared quizzes
     ).all()
     
     # Filter out quizzes that the student has already attempted
@@ -763,4 +769,65 @@ def quiz_history():
     attempts = QuizAttempt.query.filter_by(student_id=current_user.id)\
         .order_by(QuizAttempt.started_at.desc()).all()
     
-    return render_template('student/history.html', attempts=attempts) 
+    return render_template('student/history.html', attempts=attempts)
+
+@quiz_bp.route('/quiz/attempt/<int:attempt_id>/export')
+@login_required
+def export_attempt_results(attempt_id):
+    attempt = QuizAttempt.query.get_or_404(attempt_id)
+    if attempt.student_id != current_user.id and attempt.quiz.author_id != current_user.id:
+        flash('You do not have permission to export these results.', 'danger')
+        return redirect(url_for('main.index'))
+    
+    # Create CSV data
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow(['Quiz Title', 'Student', 'Score', 'Max Score', 'Percentage', 'Completion Date', 'Time Taken'])
+    
+    # Write attempt data
+    student = User.query.get(attempt.student_id)
+    time_taken = (attempt.completed_at - attempt.started_at).total_seconds() / 60 if attempt.completed_at else 0
+    writer.writerow([
+        attempt.quiz.title,
+        student.username,
+        attempt.score,
+        attempt.max_score,
+        f"{(attempt.score / attempt.max_score * 100):.2f}%" if attempt.max_score > 0 else "0%",
+        attempt.completed_at.strftime('%Y-%m-%d %H:%M:%S') if attempt.completed_at else 'Not completed',
+        f"{time_taken:.2f} minutes"
+    ])
+    
+    # Add a blank line
+    writer.writerow([])
+    
+    # Write question-wise breakdown
+    writer.writerow(['Question', 'Type', 'Your Answer', 'Correct Answer', 'Points Earned', 'Max Points', 'Result'])
+    
+    for answer in attempt.answers:
+        if answer.question.question_type == 'mcq':
+            student_answer = answer.selected_option.text if answer.selected_option else "No answer"
+            correct_answer = next((opt.text for opt in answer.question.options if opt.is_correct), "No correct answer")
+        else:  # descriptive
+            student_answer = answer.text_answer or "No answer"
+            correct_answer = answer.question.options[0].text if answer.question.options else "No correct answer"
+        
+        writer.writerow([
+            answer.question.text,
+            answer.question.question_type.upper(),
+            student_answer,
+            correct_answer,
+            answer.points_earned,
+            answer.question.points,
+            "Correct" if answer.is_correct else "Incorrect"
+        ])
+    
+    output.seek(0)
+    return Response(
+        output,
+        mimetype='text/csv',
+        headers={
+            'Content-Disposition': f'attachment; filename=quiz_attempt_{attempt_id}_results.csv'
+        }
+    ) 
