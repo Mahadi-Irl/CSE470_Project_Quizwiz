@@ -1,4 +1,4 @@
-# Quiztaker - Online Quiz Platform
+# Quizwiz - Online Quiz Platform
 
 A Flask-based web application for creating, taking, and managing quizzes. The platform supports both teachers and students with features like quiz creation, taking quizzes, viewing results, and bookmarking quizzes.
 
