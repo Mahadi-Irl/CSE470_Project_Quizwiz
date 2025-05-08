@@ -34,7 +34,32 @@ class QuestionForm(FlaskForm):
     question_type = SelectField('Question Type', choices=[('mcq', 'Multiple Choice'), ('descriptive', 'Descriptive')])
     points = IntegerField('Points', validators=[DataRequired(), NumberRange(min=1)], default=1)
     order = IntegerField('Order', validators=[Optional()])
-    options = FieldList(FormField(QuestionOptionForm), min_entries=2)
+    options = FieldList(FormField(QuestionOptionForm), min_entries=1)
+
+    def validate(self):
+        if not super().validate():
+            return False
+        
+        if self.question_type.data == 'mcq':
+            # For MCQ, require at least 2 options
+            if len(self.options.data) < 2:
+                self.options.errors.append('Multiple choice questions require at least 2 options.')
+                return False
+            # Check if exactly one option is marked as correct
+            correct_options = sum(1 for option in self.options.data if option.get('is_correct'))
+            if correct_options != 1:
+                self.options.errors.append('Multiple choice questions must have exactly one correct answer.')
+                return False
+        else:  # Descriptive question
+            # For descriptive, require exactly one option as the correct answer
+            if len(self.options.data) != 1:
+                self.options.errors.append('Descriptive questions require exactly one correct answer.')
+                return False
+            if not self.options.data[0].get('text'):
+                self.options.errors.append('Please provide the correct answer for the descriptive question.')
+                return False
+        
+        return True
 
 class QuizForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired(), Length(max=100)])

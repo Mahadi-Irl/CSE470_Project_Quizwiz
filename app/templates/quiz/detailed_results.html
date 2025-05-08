@@ -134,7 +134,7 @@
                             {% if not answer.is_correct %}
                             <div class="correct-answer">
                                 <strong>Correct Answer:</strong><br>
-                                {{ answer.question.correct_answer }}
+                                {{ answer.question.options[0].text }}
                             </div>
                             {% endif %}
                         {% endif %}

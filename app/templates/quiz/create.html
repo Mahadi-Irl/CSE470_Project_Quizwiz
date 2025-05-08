@@ -178,14 +178,14 @@
                                         </div>
                                         <div class="options-container">
                                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                                <h5>Options</h5>
-                                                <button type="button" class="btn btn-outline-primary btn-sm add-option">
+                                                <h5 class="options-title">Options</h5>
+                                                <button type="button" class="btn btn-outline-primary btn-sm add-option" style="display: none;">
                                                     <i class="bi bi-plus-circle"></i> Add Option
                                                 </button>
                                             </div>
                                             {% for option_form in question_form.options %}
                                                 <div class="option-container" data-option-index="{{ loop.index0 }}">
-                                                    <div class="d-flex justify-content-between align-items-center">
+                                                    <div class="d-flex justify-content-between align-items-center mcq-controls" style="display: none;">
                                                         <div class="form-check">
                                                             {{ option_form.is_correct(class="form-check-input") }}
                                                             {{ option_form.is_correct.label(class="form-check-label") }}
@@ -195,6 +195,7 @@
                                                         </button>
                                                     </div>
                                                     <div class="mt-2">
+                                                        {{ option_form.text.label(class="form-label descriptive-label", style="display: none;") }}
                                                         {{ option_form.text(class="form-control" + (" is-invalid" if option_form.text.errors else "")) }}
                                                         {% for error in option_form.text.errors %}
                                                             <div class="invalid-feedback">{{ error }}</div>
@@ -237,6 +238,50 @@ document.addEventListener('DOMContentLoaded', function() {
     
     isPublicCheckbox.addEventListener('change', function() {
         passwordField.style.display = this.checked ? 'none' : 'block';
+    });
+
+    // Initial state
+    passwordField.style.display = isPublicCheckbox.checked ? 'none' : 'block';
+
+    // Handle question type changes
+    function updateQuestionType(questionContainer) {
+        const questionType = questionContainer.querySelector('select[name$="-question_type"]').value;
+        const optionsContainer = questionContainer.querySelector('.options-container');
+        const addOptionBtn = optionsContainer.querySelector('.add-option');
+        const mcqControls = optionsContainer.querySelectorAll('.mcq-controls');
+        const descriptiveLabels = optionsContainer.querySelectorAll('.descriptive-label');
+        const optionsTitle = optionsContainer.querySelector('.options-title');
+        
+        if (questionType === 'descriptive') {
+            addOptionBtn.style.display = 'none';
+            mcqControls.forEach(control => control.style.display = 'none');
+            descriptiveLabels.forEach(label => label.style.display = 'block');
+            optionsTitle.textContent = 'Correct Answer';
+            // Hide all options except the first one
+            const options = optionsContainer.querySelectorAll('.option-container');
+            options.forEach((option, index) => {
+                option.style.display = index === 0 ? 'block' : 'none';
+            });
+        } else {
+            addOptionBtn.style.display = 'block';
+            mcqControls.forEach(control => control.style.display = 'flex');
+            descriptiveLabels.forEach(label => label.style.display = 'none');
+            optionsTitle.textContent = 'Options';
+            // Show all options
+            const options = optionsContainer.querySelectorAll('.option-container');
+            options.forEach(option => option.style.display = 'block');
+        }
+    }
+
+    // Initialize question types
+    document.querySelectorAll('.question-container').forEach(updateQuestionType);
+
+    // Handle question type changes
+    document.addEventListener('change', function(e) {
+        if (e.target.name && e.target.name.endsWith('-question_type')) {
+            const questionContainer = e.target.closest('.question-container');
+            updateQuestionType(questionContainer);
+        }
     });
 
     // Question and option management

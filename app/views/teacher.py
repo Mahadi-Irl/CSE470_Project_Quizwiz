@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from app.models.quiz import Quiz, QuizAttempt
 from app.models.user import User
 from app import db
+from datetime import datetime
 
 teacher_bp = Blueprint('teacher', __name__, url_prefix='/teacher')
 
@@ -22,12 +23,19 @@ def dashboard():
         attempts = QuizAttempt.query.filter_by(quiz_id=quiz.id).all()
         total_attempts = len(attempts)
         if total_attempts > 0:
-            scores = [attempt.score for attempt in attempts]
-            avg_score = sum(scores) / total_attempts
-            max_score = sum(question.points for question in quiz.questions)
-            highest_score = max(scores)
-            lowest_score = min(scores)
-            avg_percentage = (avg_score / max_score) * 100
+            scores = [attempt.score for attempt in attempts if attempt.score is not None]
+            if scores:  # Only calculate if we have valid scores
+                avg_score = sum(scores) / len(scores)
+                max_score = sum(question.points for question in quiz.questions)
+                highest_score = max(scores)
+                lowest_score = min(scores)
+                avg_percentage = (avg_score / max_score) * 100
+            else:
+                avg_score = 0
+                max_score = sum(question.points for question in quiz.questions)
+                highest_score = 0
+                lowest_score = 0
+                avg_percentage = 0
         else:
             avg_score = 0
             max_score = sum(question.points for question in quiz.questions)
@@ -47,7 +55,8 @@ def dashboard():
     
     return render_template('teacher/dashboard.html', 
                          quizzes=quizzes,
-                         quiz_stats=quiz_stats)
+                         quiz_stats=quiz_stats,
+                         now=datetime.utcnow())
 
 @teacher_bp.route('/quiz/<int:quiz_id>/results')
 @login_required

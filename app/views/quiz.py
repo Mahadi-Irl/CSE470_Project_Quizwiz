@@ -77,7 +77,8 @@ def view_quiz(quiz_id):
         if not quiz.password:
             flash('This quiz is private.', 'danger')
             return redirect(url_for('main.index'))
-        return redirect(url_for('quiz.enter_password', quiz_id=quiz_id))
+        if quiz not in current_user.shared_quizzes_list:
+            return redirect(url_for('quiz.enter_password', quiz_id=quiz_id))
     
     # Calculate statistics
     attempts = quiz.attempts.all()
@@ -130,9 +131,9 @@ def enter_password(quiz_id):
             if quiz not in current_user.shared_quizzes_list:
                 current_user.shared_quizzes_list.append(quiz)
                 db.session.commit()
-                flash('Quiz shared successfully!', 'success')
+                flash('Quiz accessed successfully!', 'success')
             else:
-                flash('Quiz is already shared with this user.', 'info')
+                flash('You already have access to this quiz.', 'info')
             return redirect(url_for('quiz.take_quiz', quiz_id=quiz_id))
         flash('Invalid password.', 'danger')
     
@@ -149,14 +150,12 @@ def take_quiz(quiz_id):
             flash('This quiz is private.', 'danger')
             return redirect(url_for('main.index'))
         if quiz not in current_user.shared_quizzes_list:
-            # Check if password was provided in the request
-            password = request.form.get('password')
-            if password and password == quiz.password:
-                # Share quiz with user
-                current_user.shared_quizzes_list.append(quiz)
-                db.session.commit()
-            else:
-                return redirect(url_for('quiz.enter_password', quiz_id=quiz_id))
+            return redirect(url_for('quiz.enter_password', quiz_id=quiz_id))
+    
+    # Check if grades have been released and user is a student
+    if quiz.grades_released and not current_user.is_teacher:
+        flash('This quiz is over. Grades have been released.', 'info')
+        return redirect(url_for('main.index'))
     
     # Check time restrictions
     now = datetime.utcnow()
@@ -197,12 +196,23 @@ def take_quiz(quiz_id):
                     is_correct=option.is_correct if option else False,
                     points_earned=question.points if option and option.is_correct else 0
                 )
-            else:
+            else:  # Descriptive question
                 text_answer = request.form.get(f'question_{question.id}')
+                # Get the correct answer from the question's options (first option is the correct answer)
+                correct_option = QuestionOption.query.filter_by(question_id=question.id).order_by(QuestionOption.order).first()
+                correct_answer = correct_option.text if correct_option else ""
+                
+                # Remove whitespace and convert to lowercase for comparison
+                student_answer = ''.join(text_answer.split()).lower() if text_answer else ""
+                correct_answer = ''.join(correct_answer.split()).lower() if correct_answer else ""
+                
+                is_correct = student_answer == correct_answer
                 answer = Answer(
                     attempt_id=attempt.id,
                     question_id=question.id,
-                    text_answer=text_answer
+                    text_answer=text_answer,
+                    is_correct=is_correct,
+                    points_earned=question.points if is_correct else 0
                 )
             db.session.add(answer)
         
@@ -256,9 +266,23 @@ def edit_quiz(quiz_id):
         quiz.start_time = form.start_time.data
         quiz.end_time = form.end_time.data
         
-        # Update questions and options
+        # Get all existing question IDs from the form
+        form_question_ids = set()
         for q_index, q_form in enumerate(form.questions):
-            # Get the question ID from the form data
+            question_id = request.form.get(f'questions-{q_index}-id')
+            if question_id and question_id.strip():
+                form_question_ids.add(int(question_id))
+        
+        # Delete questions that are not in the form
+        for question in quiz.questions:
+            if question.id not in form_question_ids:
+                # Delete associated options first
+                QuestionOption.query.filter_by(question_id=question.id).delete()
+                # Then delete the question
+                db.session.delete(question)
+        
+        # Update or create questions and options
+        for q_index, q_form in enumerate(form.questions):
             question_id = request.form.get(f'questions-{q_index}-id')
             
             if question_id and question_id.strip():
@@ -280,9 +304,20 @@ def edit_quiz(quiz_id):
                 )
                 db.session.add(question)
             
-            # Update options
+            # Get all existing option IDs for this question from the form
+            form_option_ids = set()
             for o_index, o_form in enumerate(q_form.options):
-                # Get the option ID from the form data
+                option_id = request.form.get(f'questions-{q_index}-options-{o_index}-id')
+                if option_id and option_id.strip():
+                    form_option_ids.add(int(option_id))
+            
+            # Delete options that are not in the form
+            for option in question.options:
+                if option.id not in form_option_ids:
+                    db.session.delete(option)
+            
+            # Update or create options
+            for o_index, o_form in enumerate(q_form.options):
                 option_id = request.form.get(f'questions-{q_index}-options-{o_index}-id')
                 
                 if option_id and option_id.strip():
@@ -345,7 +380,10 @@ def delete_quiz(quiz_id):
         db.session.rollback()
         flash(f'Error deleting quiz: {str(e)}', 'danger')
     
-    return redirect(url_for('main.dashboard'))
+    if current_user.is_teacher:
+        return redirect(url_for('main.history'))
+    else:
+        return redirect(url_for('student.dashboard'))
 
 @quiz_bp.route('/quiz/search', methods=['GET', 'POST'])
 @login_required
@@ -401,7 +439,15 @@ def enter_quiz_link():
         
         quiz = Quiz.query.get_or_404(quiz_id)
         
-        # Check if the quiz is already shared with the student
+        # Check if the quiz is private and user is not the author
+        if not quiz.is_public and quiz.author_id != current_user.id:
+            if not quiz.password:
+                flash('This quiz is private.', 'danger')
+                return redirect(url_for('main.index'))
+            if quiz not in current_user.shared_quizzes_list:
+                return redirect(url_for('quiz.enter_password', quiz_id=quiz_id))
+        
+        # If we get here, either the quiz is public or the user has access
         if quiz not in current_user.shared_quizzes_list:
             current_user.shared_quizzes_list.append(quiz)
             db.session.commit()
@@ -423,7 +469,15 @@ def take_shared_quiz(quiz_id):
     
     quiz = Quiz.query.get_or_404(quiz_id)
     
-    # Check if the quiz is already shared with the student
+    # Check if the quiz is private and user is not the author
+    if not quiz.is_public and quiz.author_id != current_user.id:
+        if not quiz.password:
+            flash('This quiz is private.', 'danger')
+            return redirect(url_for('main.index'))
+        if quiz not in current_user.shared_quizzes_list:
+            return redirect(url_for('quiz.enter_password', quiz_id=quiz_id))
+    
+    # If we get here, either the quiz is public or the user has access
     if quiz not in current_user.shared_quizzes_list:
         current_user.shared_quizzes_list.append(quiz)
         db.session.commit()

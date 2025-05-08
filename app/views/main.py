@@ -125,12 +125,19 @@ def teacher_home():
         attempts = QuizAttempt.query.filter_by(quiz_id=quiz.id).all()
         total_attempts = len(attempts)
         if total_attempts > 0:
-            scores = [attempt.score for attempt in attempts]
-            avg_score = sum(scores) / total_attempts
-            max_score = sum(question.points for question in quiz.questions)
-            highest_score = max(scores)
-            lowest_score = min(scores)
-            avg_percentage = (avg_score / max_score) * 100
+            scores = [attempt.score for attempt in attempts if attempt.score is not None]
+            if scores:  # Only calculate if we have valid scores
+                avg_score = sum(scores) / len(scores)
+                max_score = sum(question.points for question in quiz.questions)
+                highest_score = max(scores)
+                lowest_score = min(scores)
+                avg_percentage = (avg_score / max_score) * 100
+            else:
+                avg_score = 0
+                max_score = sum(question.points for question in quiz.questions)
+                highest_score = 0
+                lowest_score = 0
+                avg_percentage = 0
         else:
             avg_score = 0
             max_score = sum(question.points for question in quiz.questions)
