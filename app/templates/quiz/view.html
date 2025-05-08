@@ -15,12 +15,14 @@
                             <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#shareQuizModal">
                                 <i class="fas fa-share-alt"></i> Share Quiz
                             </button>
+                            {% if quiz.attempts|length == 0 %}
                             <a href="{{ url_for('quiz.edit_quiz', quiz_id=quiz.id) }}" class="btn btn-outline-primary">
                                 <i class="fas fa-edit"></i> Edit Quiz
                             </a>
                             <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteQuizModal">
                                 <i class="fas fa-trash"></i> Delete Quiz
                             </button>
+                            {% endif %}
                         </div>
                         {% endif %}
                     </div>

@@ -163,12 +163,12 @@ def take_quiz(quiz_id):
         flash('This quiz is over. Grades have been released.', 'info')
         return redirect(url_for('main.index'))
     
-    # Check time restrictions
-    now = datetime.utcnow()
-    if quiz.start_time and now < quiz.start_time:
+    # Check time restrictions    
+    now = datetime.now()
+    if quiz.start_time > now:
         flash('This quiz is not available yet.', 'info')
         return redirect(url_for('main.index'))
-    if quiz.end_time and now > quiz.end_time:
+    if now > quiz.end_time:
         flash('This quiz is no longer available.', 'info')
         return redirect(url_for('main.index'))
     

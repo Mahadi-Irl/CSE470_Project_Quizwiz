@@ -58,9 +58,21 @@
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
                                             <h6 class="mb-1">{{ attempt.quiz.title }}</h6>
-                                            <small class="text-muted">By {{ attempt.student.username }} - {{ attempt.completed_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                            <small class="text-muted">By {{ attempt.student.username }} - 
+                                                {% if attempt.completed_at %}
+                                                {{ attempt.completed_at.strftime('%Y-%m-%d %H:%M') }}
+                                                {% else %}
+                                                In Progress
+                                                {% endif %}
+                                            </small>
                                         </div>
-                                        <span class="badge bg-primary">{{ "%.1f"|format(attempt.percentage_score) }}%</span>
+                                        <span class="badge bg-primary">
+                                            {% if attempt.completed_at %}
+                                            {{ "%.1f"|format(attempt.percentage_score) }}%
+                                            {% else %}
+                                            -
+                                            {% endif %}
+                                        </span>
                                     </div>
                                 </div>
                             {% endfor %}

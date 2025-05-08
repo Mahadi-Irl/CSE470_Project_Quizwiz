@@ -47,9 +47,11 @@
                                 <small class="text-muted">Created by {{ quiz.author.username }}</small>
                                 <div>
                                     {% if current_user.is_teacher %}
+                                        {% if quiz.attempts|length == 0 %}
                                         <a href="{{ url_for('quiz.edit_quiz', quiz_id=quiz.id) }}" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-pencil"></i> Edit
                                         </a>
+                                        {% endif %}
                                     {% else %}
                                         <a href="{{ url_for('quiz.take_quiz', quiz_id=quiz.id) }}" class="btn btn-sm btn-primary">
                                             <i class="bi bi-play-fill"></i> Take Quiz
