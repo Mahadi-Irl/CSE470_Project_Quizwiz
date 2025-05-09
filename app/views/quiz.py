@@ -426,6 +426,9 @@ def toggle_bookmark(quiz_id):
     db.session.commit()
     return jsonify({'status': status})
 
+
+
+###################### Andalib ##########################################
 @quiz_bp.route('/quiz/enter-link', methods=['POST'])
 @login_required
 def enter_quiz_link():
@@ -587,6 +590,14 @@ def release_grades(quiz_id):
     flash('Grades have been released to students.', 'success')
     return redirect(url_for('quiz.quiz_results', quiz_id=quiz_id))
 
+
+
+
+
+
+
+
+###############################  Andalib #############################################
 @quiz_bp.route('/quiz/<int:quiz_id>/export')
 @login_required
 def export_results(quiz_id):
